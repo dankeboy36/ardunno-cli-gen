@@ -37,27 +37,27 @@ Examples:
 
 ```sh
 # generates from local proto files
-npx ardunno-cli generate ./path/to/rpc -o ./src-gen
+npx ardunno-cli generate ./path/to/rpc --out ./src-gen
 ```
 
 ```sh
 # generates from a valid semver
-npx ardunno-cli generate 0.28.0 -o ./src-gen
+npx ardunno-cli generate 0.28.0 --out ./src-gen
 ```
 
 ```sh
 # generates from the HEAD of the default branch
-npx ardunno-cli generate arduino/arduino-cli -o ./src-gen
+npx ardunno-cli generate arduino/arduino-cli --out ./src-gen
 ```
 
 ```sh
 # generates from a specific commit
-npx ardunno-cli generate arduino/arduino-cli#5a4ffe0 -o ./src-gen
+npx ardunno-cli generate arduino/arduino-cli#5a4ffe0 --out ./src-gen
 ```
 
 ```sh
 # generates from a specific commit of a fork
-npx ardunno-cli generate cmaglie/arduino-cli#alternate-homedir -o ./src-gen
+npx ardunno-cli generate cmaglie/arduino-cli#alternate-homedir --out ./src-gen
 ```
 
 ### API
