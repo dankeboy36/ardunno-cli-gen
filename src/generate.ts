@@ -169,11 +169,11 @@ async function checkout(gh: GitHub): Promise<{ checkoutSrc: string; dispose: () 
     log('checkout %j', gh);
     log('checkout dir %s', path);
     const url = `https://github.com/${owner}/${repo}.git`;
-    await execa('git', ['clone', url, path], { stdio: 'pipe' });
+    await execa('git', ['clone', url, path]);
     log('cloned from %s to %s', url, path);
-    await execa('git', ['-C', path, 'fetch', '--all', '--tags'], { stdio: 'pipe' });
+    await execa('git', ['-C', path, 'fetch', '--all', '--tags']);
     log('fetched all from %s', url);
-    await execa('git', ['-C', path, 'checkout', commit], { stdio: 'pipe' });
+    await execa('git', ['-C', path, 'checkout', commit]);
     log('checked out %s from %s', commit, url);
     return { checkoutSrc: join(path, 'rpc'), dispose: () => rmrf(path) };
 }

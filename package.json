@@ -1,6 +1,6 @@
 {
   "name": "ardunno-cli-gen",
-  "version": "0.1.0-beta.8",
+  "version": "0.1.0-beta.9",
   "description": "Generates nice-grpc API for the Arduino CLI",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
