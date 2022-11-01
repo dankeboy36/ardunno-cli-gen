@@ -1,2 +1,2 @@
-import generate from './generate';
-export { generate };
+import generate, { Options } from './generate';
+export { generate, Options };
