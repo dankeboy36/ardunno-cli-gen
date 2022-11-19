@@ -42,7 +42,7 @@ npx ardunno-cli generate ./path/to/rpc --out ./src-gen
 
 ```sh
 # generates from a valid semver
-npx ardunno-cli generate 0.28.0 --out ./src-gen
+npx ardunno-cli generate 0.29.0 --out ./src-gen
 ```
 
 ```sh
@@ -80,7 +80,7 @@ Generate:
 // `src` is a path like, a valid semver or a GitHub ref as `(?<owner>)/(?<repo>)(#(?<commit>))?`
 // `out` is the output folder
 // user `force` if you want to override the generated output
-await generate({ src: '0.28.0', out: './src-gen', force: true });
+await generate({ src: '0.29.0', out: './src-gen', force: true });
 ```
 
 ### Notes
