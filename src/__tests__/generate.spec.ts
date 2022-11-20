@@ -7,7 +7,6 @@ import generate, { parseGitHub, parseSemver } from '../generate';
 
 describe('generate', () => {
     it("should fail when 'src' is an accessible file", async function () {
-        this.slow(100);
         await assert.rejects(
             () =>
                 dir((path) =>
@@ -37,8 +36,7 @@ describe('generate', () => {
     });
 
     it("should fail when 'src' is unavailable semver", async function () {
-        this.slow(5_000);
-        this.timeout(5_000);
+        this.timeout(50_000);
         const semver = '100.200.300';
         await assert.rejects(
             () =>
@@ -55,8 +53,7 @@ describe('generate', () => {
     });
 
     it("should fail when 'src' is a missing remote", async function () {
-        this.slow(5_000);
-        this.timeout(5_000);
+        this.timeout(50_000);
         const owner = '565d15d5-e7e2-46cb-b1dc-cb2bfcf1a44d';
         const repo = 'arduino-cli';
         await assert.rejects(
@@ -74,10 +71,9 @@ describe('generate', () => {
     });
 
     it("should fail when 'src' is a missing commit", async function () {
-        this.slow(10_000);
-        this.timeout(10_000);
+        this.timeout(50_000);
         const owner = 'dankeboy36';
-        const repo = 'ardunno-cli-gen';
+        const repo = 'ctix-51';
         const commit = '565d15d5-e7e2-46cb-b1dc-cb2bfcf1a44d';
         await assert.rejects(
             () =>
@@ -94,8 +90,7 @@ describe('generate', () => {
     });
 
     it('should generate from local proto files', async function () {
-        this.slow(10_000);
-        this.timeout(10_000);
+        this.timeout(50_000);
         await dir(async (path) => {
             const out = join(path, 'src-gen');
             await generate({
