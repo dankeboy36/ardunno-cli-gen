@@ -1,6 +1,6 @@
 # `ardunno-cli-gen`
 
-Generates [`nice-grpc`](https://github.com/deeplay-io/nice-grpc) API of the [Arduino CLI](https://github.com/arduino/arduino-cli) from the [`proto` files](https://github.com/arduino/arduino-cli/tree/master/rpc)
+Generates [`nice-grpc`](https://github.com/deeplay-io/nice-grpc) API for the [Arduino CLI](https://github.com/arduino/arduino-cli) from the [`proto` files](https://github.com/arduino/arduino-cli/tree/master/rpc)
 
 ## Installing
 
@@ -93,6 +93,7 @@ npm run test
 
 ## Built With
 
+-   [`nice-grpc`](https://github.com/deeplay-io/nice-grpc) - A TypeScript gRPC library that is nice to you
 -   [`ts-proto`](https://github.com/stephenh/ts-proto) - An idiomatic protobuf generator for TypeScript
 -   [`protobufjs`](https://github.com/protobufjs/protobuf.js) - Protocol Buffers for JavaScript (& TypeScript)
 -   [`protoc`](https://github.com/YePpHa/node-protoc) - A simple wrapper for the protoc
@@ -127,5 +128,4 @@ The Arduino CLI has [GPL-3.0 license](https://github.com/arduino/arduino-cli/blo
 
 ## Acknowledgments
 
--   [@stephenh](https://github.com/stephenh) for [`ts-proto`](https://github.com/stephenh/ts-proto/)
 -   [@per1234](https://github.com/per1234) for the tireless support on the [Arduino Forum](https://forum.arduino.cc/)
