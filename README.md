@@ -1,14 +1,16 @@
-### ardunno-cli-gen
+# `ardunno-cli-gen`
 
-Generates [`nice-grpc`](https://github.com/deeplay-io/nice-grpc) API from the [`.proto` files](https://github.com/arduino/arduino-cli/tree/master/rpc) of the [Arduino CLI](https://github.com/arduino/arduino-cli).
+Generates [`nice-grpc`](https://github.com/deeplay-io/nice-grpc) API of the [Arduino CLI](https://github.com/arduino/arduino-cli) from the [`proto` files](https://github.com/arduino/arduino-cli/tree/master/rpc)
 
-## Installation
+## Installing
 
 ```
-npm i ardunno-cli-gen --save
+npm i ardunno-cli-gen -S
 ```
 
 ## Usage
+
+### CLI
 
 ```
 Usage: ardunno-cli generate [options] <src>
@@ -83,9 +85,20 @@ Generate:
 await generate({ src: '0.29.0', out: './src-gen', force: true });
 ```
 
+## Running the tests
+
+```
+npm run test
+```
+
+## Built With
+
+-   [`ts-proto`](https://github.com/stephenh/ts-proto) - An idiomatic protobuf generator for TypeScript
+-   [`protobufjs`](https://github.com/protobufjs/protobuf.js) - Protocol Buffers for JavaScript (& TypeScript)
+-   [`protoc`](https://github.com/YePpHa/node-protoc) - A simple wrapper for the protoc
+
 ### Notes
 
--   `ardunno-cli-gen` uses [`ts-proto`](https://www.npmjs.com/package/ts-proto) to generate the APIs ❤️
 -   The underlying `protoc` version is `3.20.3`. It comes from the [`protoc`](https://www.npmjs.com/package/protoc) dependency. `protoc` is not required on the `$PATH`
 
     ```sh
@@ -103,3 +116,16 @@ await generate({ src: '0.29.0', out: './src-gen', force: true });
       ardunno-cli-gen accessible ./path/to/rpc +1ms
     [...]
     ```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### ⚠️ Disclaimer
+
+The Arduino CLI has [GPL-3.0 license](https://github.com/arduino/arduino-cli/blob/master/LICENSE.txt). `ardunno-cli-gen` does not use any code from the CLI but relies on the proto files, which might conflict with the MIT License of this project. A request for a more permissive license for the proto files is still an [ongoing conversation](https://github.com/arduino/arduino-cli/issues/1957) with [Arduino](https://www.arduino.cc/). Please open a public issue if you have any concerns regarding the licensing of this project. It was made with pure ❤️
+
+## Acknowledgments
+
+-   [@stephenh](https://github.com/stephenh) for [`ts-proto`](https://github.com/stephenh/ts-proto/)
+-   [@per1234](https://github.com/per1234) for the tireless support on the [Arduino Forum](https://forum.arduino.cc/)
