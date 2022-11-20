@@ -50,23 +50,17 @@ export default async function (options: Options): Promise<void> {
     if (!semverOrGitHub) {
         throw new Error(`Invalid <src>: ${src}`);
     }
-    const gen = async (protoPath: string, dispose: () => Promise<void>) => {
-        try {
-            const protos = await globProtos(protoPath);
-            if (!protos) {
-                throw new Error(`Failed to glob in ${protoPath}`);
-            }
-            await generate(protoPath, protos, out);
-        } finally {
-            await dispose();
+    const { protoPath, dispose } = await (typeof semverOrGitHub === 'string'
+        ? download(semverOrGitHub)
+        : clone(semverOrGitHub));
+    try {
+        const protos = await globProtos(protoPath);
+        if (!protos) {
+            throw new Error(`Failed to glob in ${protoPath}`);
         }
-    };
-    if (typeof semverOrGitHub === 'string') {
-        const { protoPath, dispose } = await download(semverOrGitHub);
-        await gen(protoPath, dispose);
-    } else {
-        const { protoPath, dispose } = await clone(semverOrGitHub);
-        await gen(protoPath, dispose);
+        await generate(protoPath, protos, out);
+    } finally {
+        await dispose();
     }
 }
 
@@ -198,12 +192,26 @@ async function clone(
     log('clone %j', gh);
     log('clone dir %s', path);
     const url = `https://github.com/${owner}/${repo}.git`;
-    await execa('git', ['clone', url, path]);
-    log('cloned from %s to %s', url, path);
+    try {
+        await execa('git', ['clone', url, path]);
+        log('cloned from %s to %s', url, path);
+    } catch (err) {
+        log('could not clone repository %s', url);
+        throw new Error(
+            `Could not clone GitHub repository from ${url}\n\nReason: ${err}`
+        );
+    }
     await execa('git', ['-C', path, 'fetch', '--all', '--tags']);
     log('fetched all from %s', url);
-    await execa('git', ['-C', path, 'checkout', commit]);
-    log('checked out %s from %s', commit, url);
+    try {
+        await execa('git', ['-C', path, 'checkout', commit]);
+        log('checked out %s from %s', commit, url);
+    } catch (err) {
+        log('could not checkout commit %s', commit);
+        throw new Error(
+            `Could not checkout commit '${commit}' in ${owner}/${repo}\n\nReason: ${err}`
+        );
+    }
     return {
         protoPath: join(path, 'rpc'),
         dispose: () => promisify(rimraf)(path),
@@ -224,10 +232,17 @@ async function download(
 
     const { owner, repo } = arduinoGitHub;
     const filename = `arduino-cli_${semver}_proto.zip`;
-    const endpoint = `https://github.com/${owner}/${repo}/releases/download/${semver}/${filename}`;
+    const releases = `https://github.com/${owner}/${repo}/releases`;
+    const endpoint = `${releases}/download/${semver}/${filename}`;
     log('accessing protos from public endpoint %s', endpoint);
     // asset GET will result in a HTTP 302 (Redirect)
     const getLocationResp = await get(endpoint);
+    if (getLocationResp.statusCode === 404) {
+        log('release is not available for semver %s', semver);
+        throw new Error(
+            `Could not found release for version '${semver}'. Check the release page of the Arduino CLI for available versions: ${releases}`
+        );
+    }
     assertStatusCode(getLocationResp.statusCode, 302);
     const location = getLocationResp.headers.location;
     if (!location) {

@@ -1,8 +1,131 @@
 import * as assert from 'assert';
+import execa from 'execa';
 import { describe } from 'mocha';
-import { parseGitHub, parseSemver } from '../generate';
+import { join } from 'path';
+import { dir as tempDir } from 'tmp-promise';
+import generate, { parseGitHub, parseSemver } from '../generate';
 
 describe('generate', () => {
+    it("should fail when 'src' is an accessible file", async function () {
+        this.slow(100);
+        await assert.rejects(
+            () =>
+                dir((path) =>
+                    generate({
+                        src: __filename,
+                        out: join(path, 'src-gen'),
+                    })
+                ),
+            {
+                name: 'Error',
+                message: `Invalid <src>: ${__filename}`,
+            }
+        );
+    });
+
+    it("should fail when '--out' exists and '--force' is not set", async () => {
+        await assert.rejects(
+            () =>
+                dir((path) =>
+                    generate({
+                        src: __filename,
+                        out: path,
+                    })
+                ),
+            /^Error: .* already exists. Use '--force' to override output$/
+        );
+    });
+
+    it("should fail when 'src' is unavailable semver", async function () {
+        this.slow(5_000);
+        this.timeout(5_000);
+        const semver = '100.200.300';
+        await assert.rejects(
+            () =>
+                dir((path) =>
+                    generate({
+                        src: semver,
+                        out: join(path, 'src-gen'),
+                    })
+                ),
+            new RegExp(
+                `Error: Could not found release for version '${semver}'. Check the release page of the Arduino CLI for available versions: https://github.com/arduino/arduino-cli/releases`
+            )
+        );
+    });
+
+    it("should fail when 'src' is a missing remote", async function () {
+        this.slow(5_000);
+        this.timeout(5_000);
+        const owner = '565d15d5-e7e2-46cb-b1dc-cb2bfcf1a44d';
+        const repo = 'arduino-cli';
+        await assert.rejects(
+            () =>
+                dir((path) =>
+                    generate({
+                        src: `${owner}/${repo}`,
+                        out: join(path, 'src-gen'),
+                    })
+                ),
+            new RegExp(
+                `Error: Could not clone GitHub repository from https://github.com/${owner}/${repo}.git`
+            )
+        );
+    });
+
+    it("should fail when 'src' is a missing commit", async function () {
+        this.slow(10_000);
+        this.timeout(10_000);
+        const owner = 'dankeboy36';
+        const repo = 'ardunno-cli-gen';
+        const commit = '565d15d5-e7e2-46cb-b1dc-cb2bfcf1a44d';
+        await assert.rejects(
+            () =>
+                dir((path) =>
+                    generate({
+                        src: `${owner}/${repo}#${commit}`,
+                        out: join(path, 'src-gen'),
+                    })
+                ),
+            new RegExp(
+                `Error: Could not checkout commit '${commit}' in ${owner}/${repo}`
+            )
+        );
+    });
+
+    it('should generate from local proto files', async function () {
+        this.slow(10_000);
+        this.timeout(10_000);
+        await dir(async (path) => {
+            const out = join(path, 'src-gen');
+            await generate({
+                src: join(require.resolve('protoc'), '..', 'protoc', 'include'),
+                out,
+            });
+            await execa('npm', ['link', 'protobufjs']);
+            await execa('npm', ['init', '--yes'], { cwd: path });
+            await execa('npm', ['link', 'protobufjs'], {
+                cwd: path,
+            });
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/naming-convention
+                const { Empty } = require(join(
+                    out,
+                    'google',
+                    'protobuf',
+                    'empty'
+                ));
+                assert.notEqual(Empty, undefined);
+                assert.equal(typeof Empty.fromJSON, 'function');
+                assert.deepEqual(Empty.fromJSON(), {});
+            } finally {
+                await execa('npm', ['unlink', 'protobufjs'], {
+                    cwd: path,
+                });
+            }
+        });
+    });
+
     describe('parseGitHub', () => {
         it('should parse valid', () => {
             assert.deepEqual(parseGitHub('arduino/arduino-cli'), {
@@ -51,3 +174,15 @@ describe('generate', () => {
         );
     });
 });
+
+async function dir<T>(test: (path: string) => Promise<T>): Promise<T> {
+    const { path, cleanup } = await tempDir();
+    try {
+        const result = await test(path);
+        return result;
+    } finally {
+        try {
+            await cleanup();
+        } catch {}
+    }
+}
