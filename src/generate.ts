@@ -5,8 +5,7 @@ import globby from 'globby';
 import type { IncomingMessage } from 'http';
 import { get as httpsGet } from 'https';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import isValidPath from 'is-valid-path';
-import { isAbsolute, join } from 'path';
+import { join } from 'path';
 import rimraf from 'rimraf';
 import { gte, SemVer, valid } from 'semver';
 import { dir } from 'tmp-promise';
@@ -26,7 +25,10 @@ export default async function (options: Options): Promise<void> {
     const { src, out, force } = options;
     log('generating with options %j', options);
     const [outExists, protos] = await Promise.all([
-        isAccessibleFolder(out),
+        fs.access(out).then(
+            () => true,
+            () => false
+        ),
         globProtos(src),
     ]);
     if (!force && outExists) {
@@ -34,15 +36,7 @@ export default async function (options: Options): Promise<void> {
             `${out} already exists. Use '--force' to override output`
         );
     }
-    if (!outExists) {
-        try {
-            await fs.mkdir(out, { recursive: true });
-        } catch (err) {
-            log('failed to create --out %s %O', out, err);
-            throw new Error(`Failed to create '--out' ${out}: ${err}`);
-        }
-    }
-    if (protos) {
+    if (protos && protos.length) {
         log('found protos %j', protos);
         return generate(src, protos, out);
     }
@@ -65,26 +59,31 @@ export default async function (options: Options): Promise<void> {
 }
 
 interface Plugin {
-    readonly name: string;
     readonly options: Record<string, string | string[] | boolean | boolean[]>;
     readonly path: string;
 }
-
-// eslint-disable-next-line @typescript-eslint/naming-convention
-const TsProto: Plugin = {
-    name: 'ts_proto',
-    path: require.resolve('ts-proto/protoc-gen-ts_proto'),
-    options: {
-        outputServices: ['nice-grpc', 'generic-definitions'],
-        oneof: 'unions',
-        useExactTypes: false,
-        paths: 'source_relative',
-        esModuleInterop: true,
+export type PluginName = 'ts_proto';
+const plugins: Record<PluginName, Plugin> = {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    ts_proto: {
+        path: require.resolve('ts-proto/protoc-gen-ts_proto'),
+        options: {
+            outputServices: ['nice-grpc', 'generic-definitions'],
+            oneof: 'unions',
+            useExactTypes: false,
+            paths: 'source_relative',
+            esModuleInterop: true,
+        },
     },
 };
 
-function createArgs(plugin: Plugin, src: string, out: string): string[] {
-    const { name, options, path } = plugin;
+function createArgs(
+    tuple: [PluginName, Plugin],
+    src: string,
+    out: string
+): string[] {
+    const [name, plugin] = tuple;
+    const { options, path } = plugin;
     const opt = Object.entries(options)
         .reduce(
             (acc, [key, value]) =>
@@ -107,41 +106,32 @@ function createArgs(plugin: Plugin, src: string, out: string): string[] {
 async function generate(
     src: string,
     protos: string[],
-    out: string
+    out: string,
+    name: PluginName = 'ts_proto'
 ): Promise<void> {
+    try {
+        await fs.mkdir(out, { recursive: true });
+    } catch (err) {
+        log('failed to create --out %s %O', out, err);
+        throw new Error(`Failed to create '--out' ${out}: ${err}`);
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const protoc = require('protoc/protoc');
-    const args = [...createArgs(TsProto, src, out), ...protos];
+    const protoc = require('protoc/protoc'); // TODO: add support for external protoc
+    const plugin = plugins[name];
+    const args = [...createArgs([name, plugin], src, out), ...protos];
     log('executing %s with args %j', protoc, args);
     await execa(protoc, args);
 }
 
 async function globProtos(cwd: string): Promise<string[] | undefined> {
     log('glob %s', cwd);
-    if (!(await isAccessibleFolder(cwd))) {
-        log('glob invalid path %s', cwd);
-        return undefined;
-    }
-    return globby('**/*.proto', { cwd });
-}
-
-async function isAccessibleFolder(maybePath: string): Promise<boolean> {
-    log('accessible %s', maybePath);
-    if (!isValidPath(maybePath)) {
-        log('accessible invalid path %s', maybePath);
-        return false;
-    }
-    const path = isAbsolute(maybePath)
-        ? maybePath
-        : join(process.cwd(), maybePath);
     try {
-        const stat = await fs.stat(path);
-        const dir = stat.isDirectory();
-        log('is dir %s %d', path, dir);
-        return dir;
-    } catch {
-        log('stat failed %s', path);
-        return false;
+        const protos = await globby('**/*.proto', { cwd });
+        return protos;
+    } catch (err) {
+        log('glob failed %O', err);
+        return undefined;
     }
 }
 
