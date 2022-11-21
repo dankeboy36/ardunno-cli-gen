@@ -91,7 +91,7 @@ await generate({ src: '0.29.0', out: './src-gen', force: true });
 npm run test
 ```
 
-## Built With
+## Using
 
 -   [`nice-grpc`](https://github.com/deeplay-io/nice-grpc) - A TypeScript gRPC library that is nice to you
 -   [`ts-proto`](https://github.com/stephenh/ts-proto) - An idiomatic protobuf generator for TypeScript
@@ -124,7 +124,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### ⚠️ Disclaimer
 
-The Arduino CLI has [GPL-3.0 license](https://github.com/arduino/arduino-cli/blob/master/LICENSE.txt). `ardunno-cli-gen` does not use any code from the CLI but relies on the proto files, which might conflict with the MIT License of this project. A request for a more permissive license for the proto files is still an [ongoing conversation](https://github.com/arduino/arduino-cli/issues/1957) with [Arduino](https://www.arduino.cc/). Please open a public issue if you have any concerns regarding the licensing of this project. It was made with pure ❤️
+The Arduino CLI, including the proto files, has a [GPL-3.0 license](https://github.com/arduino/arduino-cli/blob/master/LICENSE.txt). `ardunno-cli-gen` does not use any code from the CLI but relies on the proto files. There is an ongoing [conversation](https://github.com/arduino/arduino-cli/issues/1957) with Arduino to relicense the proto files with a more permissive license, such as MIT. Please [open a new issue](https://github.com/dankeboy36/ardunno-cli-gen/issues/new) if you have any concerns regarding the licensing of this project. Thank you!
+
+I made `ardunno-cli-gen` with pure ❤️
 
 ## Acknowledgments
 
