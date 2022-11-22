@@ -89,6 +89,36 @@ describe('generate', () => {
         );
     });
 
+    it("should support 'https_proxy' environment variable", async function () {
+        this.timeout(10_000);
+        const invalidProxy = '300.300.300.300';
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        const { https_proxy } = process.env;
+        try {
+            process.env.https_proxy = invalidProxy;
+            await assert.rejects(
+                () =>
+                    dir((path) =>
+                        generate({
+                            src: 'arduino/arduino-cli#does-not-matter',
+                            out: join(path, 'src-gen'),
+                        })
+                    ),
+                (err) =>
+                    err instanceof Error &&
+                    err.message.endsWith(
+                        `Could not resolve proxy: ${invalidProxy}`
+                    )
+            );
+        } finally {
+            if (typeof https_proxy === 'string') {
+                process.env.https_proxy = https_proxy;
+            } else {
+                delete process.env.https_proxy;
+            }
+        }
+    });
+
     it('should generate from local proto files', async function () {
         this.timeout(50_000);
         await dir(async (path) => {
