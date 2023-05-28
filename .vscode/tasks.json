@@ -1,0 +1,38 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "generate",
+      "type": "process",
+      "command": "node",
+      "args": [
+        "dist/cli.js",
+        "generate",
+        "${input:source}",
+        "--out",
+        "${input:output}"
+      ],
+      "dependsOn": ["npm: compile"]
+    },
+    {
+      "type": "npm",
+      "script": "compile",
+      "problemMatcher": "$tsc",
+      "group": "build"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "output",
+      "default": "gen-output",
+      "type": "promptString",
+      "description": "Path to the generated output folder."
+    },
+    {
+      "id": "source",
+      "default": "0.33.0-rc1",
+      "type": "promptString",
+      "description": "The source to genegare from. It can be an Arduino CLI version (as a semver), a GitHub commitish, or a filesystem path with the proto file"
+    }
+  ]
+}

@@ -1,9 +1,10 @@
 import * as assert from 'assert';
-import execa from 'execa';
 import { describe } from 'mocha';
-import { join } from 'path';
+import { join } from 'node:path';
 import { dir as tempDir } from 'tmp-promise';
-import generate, { parseGitHub, parseSemver } from '../generate';
+import generate, { __test, parseGitHub, parseSemver } from '../generate';
+
+const { execa } = __test;
 
 describe('generate', () => {
     it("should fail when 'src' is an accessible file", async function () {

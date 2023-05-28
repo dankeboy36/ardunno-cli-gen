@@ -1,17 +1,14 @@
-import { debug } from 'debug';
-import execa from 'execa';
-import { createWriteStream, promises as fs } from 'fs';
-import globby from 'globby';
-import type { IncomingMessage } from 'http';
-import { get as httpsGet } from 'https';
+import debug from 'debug';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import { join } from 'path';
-import rimraf from 'rimraf';
-import { gte, SemVer, valid } from 'semver';
+import { createWriteStream, promises as fs } from 'node:fs';
+import type { IncomingMessage } from 'node:http';
+import { get as httpsGet } from 'node:https';
+import { join } from 'node:path';
+import { URL } from 'node:url';
+import { rimraf } from 'rimraf';
+import { SemVer, gte, valid } from 'semver';
 import { dir } from 'tmp-promise';
 import { Open } from 'unzipper';
-import { URL } from 'url';
-import { promisify } from 'util';
 
 const log = debug('ardunno-cli-gen');
 
@@ -73,6 +70,8 @@ const plugins: Record<PluginName, Plugin> = {
             useExactTypes: false,
             paths: 'source_relative',
             esModuleInterop: true,
+            exportCommonSymbols: false,
+            useOptionals: 'none',
         },
     },
 };
@@ -124,9 +123,19 @@ async function generate(
     await execa(protoc, args);
 }
 
+async function execa(
+    file: string,
+    args: string[],
+    options?: { cwd?: string }
+): Promise<void> {
+    const { execa } = await import('execa');
+    await execa(file, args, options);
+}
+
 async function globProtos(cwd: string): Promise<string[] | undefined> {
     log('glob %s', cwd);
     try {
+        const { globby } = await import('globby');
         const protos = await globby('**/*.proto', { cwd });
         return protos;
     } catch (err) {
@@ -204,7 +213,7 @@ async function clone(
     }
     return {
         protoPath: join(path, 'rpc'),
-        dispose: () => promisify(rimraf)(path),
+        dispose: () => rimraf(path) as Promise<unknown> as Promise<void>,
     };
 }
 
@@ -264,7 +273,7 @@ async function download(
     await archive.extract({ path: protoPath });
     return {
         protoPath,
-        dispose: () => promisify(rimraf)(path),
+        dispose: () => rimraf(path) as Promise<unknown> as Promise<void>,
     };
 }
 
@@ -336,3 +345,11 @@ type RegExpGroups<T extends string[]> =
           groups?: { [name in T[number]]: string } | { [key: string]: string };
       })
     | null;
+
+/**
+ * (non-API)
+ */
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export const __test = {
+    execa,
+} as const;

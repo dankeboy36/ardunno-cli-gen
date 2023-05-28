@@ -118,6 +118,10 @@ npm run test
     [...]
     ```
 
+-   Run the generator from the sources (or use the predefined `generate` VS Code task):
+    -   `npm run compile`
+    -   `node dist/cli.js generate 0.32.2 --out ./gen-output
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
