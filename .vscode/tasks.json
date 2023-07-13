@@ -12,6 +12,11 @@
         "--out",
         "${input:output}"
       ],
+      "options": {
+        "env": {
+          "DEBUG": "ardunno-cli*"
+        }
+      },
       "dependsOn": ["npm: compile"]
     },
     {
