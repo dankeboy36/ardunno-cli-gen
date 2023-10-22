@@ -1,10 +1,11 @@
-import * as assert from 'assert';
+import * as assert from 'assert/strict';
 import { describe } from 'mocha';
 import { join } from 'node:path';
 import { dir as tempDir } from 'tmp-promise';
-import generate, { __test, parseGitHub, parseSemver } from '../generate';
+import generate, { __test } from '../generate';
+import { SemVer } from 'semver';
 
-const { execa } = __test;
+const { parseSemver, parseGitHub, protoLocation, execa } = __test;
 
 describe('generate', () => {
     it("should fail when 'src' is an accessible file", async function () {
@@ -141,9 +142,9 @@ describe('generate', () => {
                     'protobuf',
                     'empty'
                 ));
-                assert.notEqual(Empty, undefined);
-                assert.equal(typeof Empty.fromJSON, 'function');
-                assert.deepEqual(Empty.fromJSON(), {});
+                assert.notStrictEqual(Empty, undefined);
+                assert.strictEqual(typeof Empty.fromJSON, 'function');
+                assert.deepStrictEqual(Empty.fromJSON(), {});
             } finally {
                 await execa('npm', ['unlink', 'protobufjs'], {
                     cwd: path,
@@ -154,13 +155,13 @@ describe('generate', () => {
 
     describe('parseGitHub', () => {
         it('should parse valid', () => {
-            assert.deepEqual(parseGitHub('arduino/arduino-cli'), {
+            assert.deepStrictEqual(parseGitHub('arduino/arduino-cli'), {
                 owner: 'arduino',
                 repo: 'arduino-cli',
             });
         });
         it('should parse valid with commit', () => {
-            assert.deepEqual(parseGitHub('arduino/arduino-cli#5a4ffe0'), {
+            assert.deepStrictEqual(parseGitHub('arduino/arduino-cli#5a4ffe0'), {
                 owner: 'arduino',
                 repo: 'arduino-cli',
                 commit: '5a4ffe0',
@@ -176,28 +177,124 @@ describe('generate', () => {
             'owner/repo#one two',
         ].forEach((src) =>
             it(`should not parse '${src}'`, () =>
-                assert.equal(parseGitHub(src), undefined))
+                assert.strictEqual(parseGitHub(src), undefined))
         );
     });
     describe('parseSemver', () => {
         it('should parse valid', () =>
-            assert.equal(parseSemver('0.30.0'), '0.30.0'));
+            assert.strictEqual(
+                (<SemVer>parseSemver('0.30.0')).version,
+                '0.30.0'
+            ));
         it('should parse valid with rc', () =>
-            assert.equal(parseSemver('0.30.0-rc1'), '0.30.0-rc1'));
+            assert.strictEqual(
+                (<SemVer>parseSemver('0.30.0-rc1')).version,
+                '0.30.0-rc1'
+            ));
         it("should parse valid with 'v' prefix", () =>
-            assert.equal(parseSemver('v0.29.1'), '0.29.1'));
+            assert.strictEqual(
+                (<SemVer>parseSemver('v0.29.1')).version,
+                '0.29.1'
+            ));
         it("should parse valid semver '>=0.29.0' as a semver [arduino/arduino-cli#1931]", () =>
-            assert.equal(parseSemver('0.29.0'), '0.29.0'));
+            assert.strictEqual(
+                (<SemVer>parseSemver('0.29.0')).version,
+                '0.29.0'
+            ));
         it("should parse to GitHub ref when version is not greater than '0.28.0'", () =>
-            assert.deepEqual(parseSemver('0.28.0'), {
+            assert.deepStrictEqual(parseSemver('0.28.0'), {
                 owner: 'arduino',
                 repo: 'arduino-cli',
                 commit: '0.28.0',
             }));
         ['a', '0', '0.30', '0.30.', '0.30.0.'].forEach((src) =>
             it(`should not parse '${src}'`, () =>
-                assert.equal(parseSemver(src), undefined))
+                assert.strictEqual(parseSemver(src), undefined))
         );
+    });
+    describe('protoLocation', () => {
+        (
+            [
+                ['0.28.0', false],
+                ['0.29.0-rc.1', false],
+                [
+                    '0.29.0',
+                    {
+                        endpoint:
+                            'https://github.com/arduino/arduino-cli/releases/download/0.29.0/arduino-cli_0.29.0_proto.zip',
+                        filename: 'arduino-cli_0.29.0_proto.zip',
+                    },
+                ],
+                [
+                    'v0.29.0',
+                    {
+                        endpoint:
+                            'https://github.com/arduino/arduino-cli/releases/download/0.29.0/arduino-cli_0.29.0_proto.zip',
+                        filename: 'arduino-cli_0.29.0_proto.zip',
+                    },
+                ],
+                [
+                    'v0.34.2',
+                    {
+                        endpoint:
+                            'https://github.com/arduino/arduino-cli/releases/download/0.34.2/arduino-cli_0.34.2_proto.zip',
+                        filename: 'arduino-cli_0.34.2_proto.zip',
+                    },
+                ],
+                [
+                    'v0.35.0-rc.0',
+                    {
+                        endpoint:
+                            'https://github.com/arduino/arduino-cli/releases/download/0.35.0-rc.0/arduino-cli_0.35.0-rc.0_proto.zip',
+                        filename: 'arduino-cli_0.35.0-rc.0_proto.zip',
+                    },
+                ],
+                [
+                    'v0.35.0-rc.1',
+                    {
+                        endpoint:
+                            'https://github.com/arduino/arduino-cli/releases/download/v0.35.0-rc.1/arduino-cli_0.35.0-rc.1_proto.zip',
+                        filename: 'arduino-cli_0.35.0-rc.1_proto.zip',
+                    },
+                ],
+                [
+                    'v0.35.0',
+                    {
+                        endpoint:
+                            'https://github.com/arduino/arduino-cli/releases/download/v0.35.0/arduino-cli_0.35.0_proto.zip',
+                        filename: 'arduino-cli_0.35.0_proto.zip',
+                    },
+                ],
+                [
+                    'v0.35.1',
+                    {
+                        endpoint:
+                            'https://github.com/arduino/arduino-cli/releases/download/v0.35.1/arduino-cli_0.35.1_proto.zip',
+                        filename: 'arduino-cli_0.35.1_proto.zip',
+                    },
+                ],
+            ] as const
+        )
+            .map(
+                ([raw, expected]) =>
+                    [new SemVer(raw, { loose: true }), expected] as [
+                        SemVer,
+                        { endpoint: string; filename: string } | false
+                    ]
+            )
+            .forEach(([semver, expected]) =>
+                it(`should${
+                    !expected ? ' not' : ''
+                } get the GitHub release asset location for the protos (${
+                    semver.raw
+                })`, () => {
+                    if (!expected) {
+                        assert.throws(() => protoLocation(semver));
+                    } else {
+                        assert.deepStrictEqual(protoLocation(semver), expected);
+                    }
+                })
+            );
     });
 });
 

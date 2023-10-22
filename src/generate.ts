@@ -41,7 +41,7 @@ export default async function (options: Options): Promise<void> {
     if (!semverOrGitHub) {
         throw new Error(`Invalid <src>: ${src}`);
     }
-    const { protoPath, dispose } = await (typeof semverOrGitHub === 'string'
+    const { protoPath, dispose } = await (semverOrGitHub instanceof SemVer
         ? download(semverOrGitHub)
         : clone(semverOrGitHub));
     try {
@@ -59,7 +59,7 @@ interface Plugin {
     readonly options: Record<string, string | string[] | boolean | boolean[]>;
     readonly path: string;
 }
-export type PluginName = 'ts_proto';
+type PluginName = 'ts_proto';
 const plugins: Record<PluginName, Plugin> = {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     ts_proto: {
@@ -161,10 +161,7 @@ interface GitHub {
     readonly commit?: string | undefined;
 }
 
-/**
- * (non-API)
- */
-export function parseGitHub(src: string): GitHub | undefined {
+function parseGitHub(src: string): GitHub | undefined {
     const match: RegExpGroups<['owner', 'repo', 'commit']> =
         src.match(ghPattern);
     if (match && match.groups) {
@@ -217,9 +214,10 @@ async function clone(
     };
 }
 
-async function download(
-    semver: string
-): Promise<{ protoPath: string; dispose: () => Promise<void> }> {
+const { owner, repo } = arduinoGitHub;
+const releases = `https://github.com/${owner}/${repo}/releases`;
+
+function protoLocation(semver: SemVer): { endpoint: string; filename: string } {
     if (!valid(semver)) {
         log('attempted to download with invalid semver %s', semver);
         throw new Error(`invalid semver ${semver}`);
@@ -228,11 +226,26 @@ async function download(
         log('attempted to download the asset file with semver %s', semver);
         throw new Error(`semver must be '>=0.29.0' it was ${semver}`);
     }
+    const filenameVersion = semver.version;
+    const ghReleaseVersion = hasSemverPrefix(semver)
+        ? semver.raw
+        : semver.version;
+    const filename = `arduino-cli_${filenameVersion}_proto.zip`;
+    const endpoint = `${releases}/download/${ghReleaseVersion}/${filename}`;
+    log(
+        'semver: %s (raw: %s), filename: %s, endpoint: %s',
+        semver.version,
+        semver.raw,
+        filename,
+        endpoint
+    );
+    return { endpoint, filename };
+}
 
-    const { owner, repo } = arduinoGitHub;
-    const filename = `arduino-cli_${semver}_proto.zip`;
-    const releases = `https://github.com/${owner}/${repo}/releases`;
-    const endpoint = `${releases}/download/${semver}/${filename}`;
+async function download(
+    semver: SemVer
+): Promise<{ protoPath: string; dispose: () => Promise<void> }> {
+    const { endpoint, filename } = protoLocation(semver);
     log('accessing protos from public endpoint %s', endpoint);
     // asset GET will result in a HTTP 302 (Redirect)
     const getLocationResp = await get(endpoint);
@@ -304,39 +317,48 @@ async function get(endpoint: string): Promise<IncomingMessage> {
 }
 
 /**
- * (non-API)
- *
  * If the `src` argument is `<0.29.0` semver, the function returns with a `GitHub` instance.
  */
-export function parseSemver(src: string): string | GitHub | undefined {
+function parseSemver(src: string): SemVer | GitHub | undefined {
     log('parse semver %s', src);
     if (!valid(src)) {
         log('invalid semver %s', src);
         return undefined;
     }
-    const semver = new SemVer(src, true);
-    const version = semver.version;
+    const semver = new SemVer(src, { loose: true });
     if (canDownloadProtos(semver)) {
-        log('parsed semver %s is >=0.29.0', version);
-        return version;
+        log(
+            'parsed semver %s is >=0.29.0 (raw: %s)',
+            semver.version,
+            semver.raw
+        );
+        return semver;
     }
     const github = {
         ...arduinoGitHub,
         commit: semver.version,
     };
     log(
-        'parsed semver %s is <0.29.0. falling back to GitHub ref %j',
-        version,
+        'parsed semver %s is <0.29.0 (raw: %s). falling back to GitHub ref %j',
+        semver.version,
+        semver.raw,
         github
     );
     return github;
 }
 
 /**
- * The `.proto` files were not part of the Arduino CLI release before version 0.29.0 ([`arduino/arduino-cli#1931`](https://github.com/arduino/arduino-cli/pull/1931)).
+ * The `.proto` files were not part of the Arduino CLI release before version `0.29.0` ([`arduino/arduino-cli#1931`](https://github.com/arduino/arduino-cli/pull/1931)).
  */
 function canDownloadProtos(semver: SemVer | string): boolean {
     return gte(semver, new SemVer('0.29.0'));
+}
+
+/**
+ * The Arduino CLI GitHub release has the `'v'` prefix from version `>=v0.35.0-rc.1` ([`arduino/arduino-cli#2374`](https://github.com/arduino/arduino-cli/pull/2374)).
+ */
+function hasSemverPrefix(semver: SemVer | string): boolean {
+    return gte(semver, new SemVer('0.35.0-rc.1'));
 }
 
 // Taken from https://github.com/microsoft/TypeScript/issues/32098#issuecomment-1212501932
@@ -351,5 +373,8 @@ type RegExpGroups<T extends string[]> =
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const __test = {
+    parseGitHub,
+    protoLocation,
+    parseSemver,
     execa,
 } as const;
