@@ -35,7 +35,7 @@
     },
     {
       "id": "source",
-      "default": "0.33.0-rc1",
+      "default": "v1.1.0",
       "type": "promptString",
       "description": "The source to genegare from. It can be an Arduino CLI version (as a semver), a GitHub commitish, or a filesystem path with the proto file"
     }
