@@ -100,11 +100,11 @@ npm run test
 
 ### Notes
 
--   The underlying `protoc` version is `3.20.3`. It comes from the [`protoc`](https://www.npmjs.com/package/protoc) dependency. `protoc` is not required on the `$PATH`
+-   The underlying `protoc` version is `3.19.1`. It comes from the [`@pingghost/protoc`](https://www.npmjs.com/package/@pingghost/protoc) dependency. `protoc` is not required on the `$PATH`
 
     ```sh
-    npx protoc --version
-    libprotoc 3.20.3
+    npx @pingghost/protoc --version
+    libprotoc 3.19.1
     ```
 
 -   Use [`debug`](https://www.npmjs.com/package/debug) to log additional details
@@ -120,15 +120,11 @@ npm run test
 
 -   Run the generator from the sources (or use the predefined `generate` VS Code task):
     -   `npm run compile`
-    -   `node dist/cli.js generate 0.32.2 --out ./gen-output
+    -   `node dist/cli.js generate 1.1.0 --out ./gen-output
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-### ⚠️ Disclaimer
-
-The Arduino CLI, including the proto files, has a [GPL-3.0 license](https://github.com/arduino/arduino-cli/blob/master/LICENSE.txt). `ardunno-cli-gen` does not use any code from the CLI but relies on the proto files. There is an ongoing [conversation](https://github.com/arduino/arduino-cli/issues/1957) with Arduino to relicense the proto files with a more permissive license, such as MIT. Please [open a new issue](https://github.com/dankeboy36/ardunno-cli-gen/issues/new) if you have any concerns regarding the licensing of this project. Thank you!
 
 I made `ardunno-cli-gen` with pure ❤️
 
