@@ -115,8 +115,9 @@ async function generate(
         throw new Error(`Failed to create '--out' ${out}: ${err}`);
     }
 
+    // Credit: https://github.com/arduino/arduino-ide/pull/2457/commits/f842badea8b0272f697db9c06ad31da732e62f45
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const protoc = require('protoc/protoc'); // TODO: add support for external protoc
+    const protoc = require('@pingghost/protoc/protoc'); // TODO: add support for external protoc
     const plugin = plugins[name];
     const args = [...createArgs([name, plugin], src, out), ...protos];
     log('executing %s with args %j', protoc, args);
