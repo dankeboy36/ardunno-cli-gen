@@ -126,7 +126,12 @@ describe('generate', () => {
         await dir(async (path) => {
             const out = join(path, 'src-gen');
             await generate({
-                src: join(require.resolve('protoc'), '..', 'protoc', 'include'),
+                src: join(
+                    require.resolve('@pingghost/protoc'),
+                    '..',
+                    'protoc',
+                    'include'
+                ),
                 out,
             });
             await execa('npm', ['link', 'protobufjs']);

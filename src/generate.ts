@@ -115,8 +115,9 @@ async function generate(
         throw new Error(`Failed to create '--out' ${out}: ${err}`);
     }
 
+    // Credit: https://github.com/arduino/arduino-ide/pull/2457/commits/f842badea8b0272f697db9c06ad31da732e62f45
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const protoc = require('protoc/protoc'); // TODO: add support for external protoc
+    const protoc = require('@pingghost/protoc/protoc'); // TODO: add support for external protoc
     const plugin = plugins[name];
     const args = [...createArgs([name, plugin], src, out), ...protos];
     log('executing %s with args %j', protoc, args);
@@ -284,6 +285,16 @@ async function download(
     const archive = await Open.file(zipPath);
     const protoPath = join(path, 'rpc');
     await archive.extract({ path: protoPath });
+    // Patch for https://github.com/arduino/arduino-cli/issues/2755
+    // Download the 1.0.4 version and use the missing google/rpc/status.proto
+    if (semver.version !== '1.0.4') {
+        const { protoPath: v104ProtoPath, dispose: v104Dispose } =
+            await download(new SemVer('v1.0.4'));
+        await fs.cp(join(v104ProtoPath, 'google'), join(protoPath, 'google'), {
+            recursive: true,
+        });
+        v104Dispose();
+    }
     return {
         protoPath,
         dispose: () => rimraf(path) as Promise<unknown> as Promise<void>,
