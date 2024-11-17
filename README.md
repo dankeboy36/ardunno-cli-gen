@@ -120,13 +120,13 @@ npm run test
 
 -   Run the generator from the sources (or use the predefined `generate` VS Code task):
     -   `npm run compile`
-    -   `node dist/cli.js generate 1.1.0 --out ./gen-output
+    -   `node dist/cli.js generate v1.1.0 --out ./gen-output`
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-I made `ardunno-cli-gen` with pure ❤️
+I made [`ardunno-cli-gen`](https://github.com/dankeboy36/ardunno-cli-gen) with pure ❤️
 
 ## Acknowledgments
 
